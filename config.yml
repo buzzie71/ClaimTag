@@ -1,0 +1,15 @@
+runner-tag-on: false
+debug-mode: false
+suppress-global-alerts: false
+
+runners:
+   - buzzie71
+   - Zomise
+   
+buzzie71:
+   - name1
+   - name2
+   
+Zomise:
+   - name1
+   - name2
