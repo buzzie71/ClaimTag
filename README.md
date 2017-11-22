@@ -15,9 +15,13 @@ Runners can be added or removed from the list with:
 
 `/ct addrunner <playername>` or `/ct delrunner <index>`
 
-and the prize for tagging a particular player can be set by holding it and running:
+The prize for tagging a particular player can be set by holding it and running:
 
 `/ct setprize <runnername>`
+
+Copies of the prizes can be obtained for inspection with `/ct getprize <runnername>`.  The prize is given only if inventory is not full.
+
+Configuration changes can be saved to file with `/ct save`.
 
 These commands are intended to be reserved for server administrators.
 
