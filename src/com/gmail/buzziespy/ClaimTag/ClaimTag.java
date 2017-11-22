@@ -1,8 +1,12 @@
 package com.gmail.buzziespy.ClaimTag;
 
+import java.util.AbstractSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -10,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class ClaimTag extends JavaPlugin implements Listener{
@@ -30,7 +35,8 @@ public static boolean suppressGlobalAlerts;
 		getLogger().info("Loading runner tagging status...");
 		runnerTag = getConfig().getBoolean("runner-tag-on");
 		getLogger().info("Loading runner list...");
-		runnerList = getConfig().getStringList("runners");
+		getRunnerList();
+		//runnerList = getConfig().getStringList("runners");
 		getLogger().info("Loading debug status...");
 		debugMode = getConfig().getBoolean("debug-mode");
 		getLogger().info("Loading global alerts...");
@@ -111,9 +117,14 @@ public static boolean suppressGlobalAlerts;
 				{
 					sender.sendMessage(ChatColor.RED + "/ct setprize <playername>");
 				}
+				else if (args[0].equalsIgnoreCase("save"))
+				{
+					saveConfig();
+					sender.sendMessage(ChatColor.GREEN + "ClaimTag Config changes saved to file!");
+				}
 				else
 				{
-					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|debug-mode|runner-tag|suppress-alerts|setprize]");
+					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|delrunner|debug-mode|runner-tag|suppress-alerts|setprize|getprize|save]");
 				}
 			}
 			else if (args.length == 2)
@@ -127,47 +138,159 @@ public static boolean suppressGlobalAlerts;
 				}
 				else if (args[0].equalsIgnoreCase("delrunner"))
 				{
-					/* Develop this after /ct addrunner
-					String playername = args[1];
-					//if player is online, add them to the runners list
-					//DEBUG:
-					if (getServer().getPlayer(playername) != null)
-					{
-						getLogger().info("Found " + playername + "!");
-					}
-					else //if player is not online
-					{
-						getLogger().info("Did not find " + playername + ".  Are they offline?");
-					}
-					//addPlayerToRunnersList(playername);
-					//DEBUG:
-					//getLogger().info("UUID for " + playername + " : " + );
-					 * */
+					//int index = Integer.parseInt(args[1]);
+					//sender.sendMessage(ChatColor.RED + removePlayerFromRunnersList(index-1) + " has been removed from the runners list.");
+					//try removing by name instead:
 					
-					sender.sendMessage(ChatColor.RED + playername + " has been removed from the runners list.");
 				}
 				else if (args[0].equalsIgnoreCase("debug-mode"))
 				{
-					sender.sendMessage(ChatColor.AQUA + "Debug mode: " + debugMode);
-					sender.sendMessage(ChatColor.RED + "/ct debug-mode <true|false>");
+					if (args[1].equalsIgnoreCase("true"))
+					{
+						if (debugMode)
+						{
+							sender.sendMessage(ChatColor.RED + "Debug mode is already set to true.");
+						}
+						else
+						{
+							debugMode = true;
+							sender.sendMessage(ChatColor.GREEN + "Debug mode set to true. Debug messages will appear in console.");
+						}
+					}
+					else if (args[1].equalsIgnoreCase("false"))
+					{
+						if (!debugMode)
+						{
+							sender.sendMessage(ChatColor.RED + "Debug mode is already set to false.");
+						}
+						else
+						{
+							debugMode = true;
+							sender.sendMessage(ChatColor.GREEN + "Debug mode set to true. Debug messages will appear in console.");
+						}
+					}
+					else
+					{
+						sender.sendMessage(ChatColor.RED + "/ct debug-mode <true|false>");
+					}
 				}
 				else if (args[0].equalsIgnoreCase("runner-tag"))
 				{
-					sender.sendMessage(ChatColor.AQUA + "Runner tag: " + runnerTag);
-					sender.sendMessage(ChatColor.RED + "/ct runner-tag <true|false>");
+					if (args[1].equalsIgnoreCase("true"))
+					{
+						if (runnerTag)
+						{
+							sender.sendMessage(ChatColor.RED + "Runner tag is already set to true.");
+						}
+						else
+						{
+							runnerTag = true;
+							sender.sendMessage(ChatColor.GREEN + "Runner tag set to true. Players can now tag runners for prizes.");
+						}
+					}
+					else if (args[1].equalsIgnoreCase("false"))
+					{
+						if (!runnerTag)
+						{
+							sender.sendMessage(ChatColor.RED + "Runner tag is already set to false.");
+						}
+						else
+						{
+							debugMode = true;
+							sender.sendMessage(ChatColor.GREEN + "Runner tag set to true. Players will not be able to tag runners for prizes.");
+						}
+					}
+					else
+					{
+						sender.sendMessage(ChatColor.RED + "/ct runner-tag <true|false>");
+					}
 				}
 				else if (args[0].equalsIgnoreCase("suppress-broadcasts"))
 				{
-					sender.sendMessage(ChatColor.AQUA + "Suppress broadcasts: " + suppressGlobalAlerts);
-					sender.sendMessage(ChatColor.RED + "/ct suppress-broadcasts <true|false>");
+					if (args[1].equalsIgnoreCase("true"))
+					{
+						if (suppressGlobalAlerts)
+						{
+							sender.sendMessage(ChatColor.RED + "Suppress broadcasts is already set to true.");
+						}
+						else
+						{
+							suppressGlobalAlerts = true;
+							sender.sendMessage(ChatColor.GREEN + "Suppress broadcasts set to true. Server-wide broadcasts from this plugin will not display.");
+						}
+					}
+					else if (args[1].equalsIgnoreCase("false"))
+					{
+						if (!suppressGlobalAlerts)
+						{
+							sender.sendMessage(ChatColor.RED + "Suppress broadcasts is already set to false.");
+						}
+						else
+						{
+							suppressGlobalAlerts = true;
+							sender.sendMessage(ChatColor.GREEN + "Suppress broadcasts set to false. Server-wide broadcasts from this plugin will display to all online players.");
+						}
+					}
+					else
+					{
+						sender.sendMessage(ChatColor.RED + "/ct suppress-broadcasts <true|false>");
+					}
 				}
 				else if (args[0].equalsIgnoreCase("setprize"))
 				{
-					sender.sendMessage(ChatColor.RED + "/ct setprize <playername>");
+					if (sender instanceof Player)
+					{
+						Player p = (Player)sender;
+						String runnerName = args[1];
+						//DEBUG:
+						getLogger().info("Attempting to access runners."+runnerName);
+						if (getConfig().isItemStack("runners."+runnerName))
+						{
+							ItemStack i = p.getEquipment().getItemInMainHand();
+							getConfig().set("runners."+runnerName, i);
+							p.sendMessage(ChatColor.GREEN + "Prize for tagging " + runnerName + " has been set.");
+						}
+						else
+						{
+							p.sendMessage(ChatColor.RED + runnerName + " is not on the runners list!");
+						}
+						
+					}
+					else
+					{
+						sender.sendMessage(ChatColor.RED + "You must be in-game to run this command.");
+					}
+				}
+				else if (args[0].equalsIgnoreCase("getprize"))
+				{
+					String runnerName = args[1];
+					if (getConfig().isItemStack("runners."+runnerName))
+					{
+						if (sender instanceof Player)
+						{
+							Player p = (Player)sender;
+							if (givePrizeToPlayer(p, runnerName))
+							{
+								p.sendMessage(ChatColor.GREEN + "You have received the prize for tagging " + runnerName + ".");
+							}
+							else
+							{
+								p.sendMessage(ChatColor.RED + "Your inventory is full. Clear some space and try again.");
+							}
+						}
+						else
+						{
+							sender.sendMessage(ChatColor.RED + "You must be in-game to run this command.");
+						}
+					}
+					else
+					{
+						sender.sendMessage(ChatColor.RED + runnerName + " is not on the runners list!");
+					}
 				}
 				else
 				{
-					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|debug-mode|runner-tag|suppress-alerts|setprize]");
+					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|delrunner|debug-mode|runner-tag|suppress-alerts|setprize|getprize|save]");
 				}
 			}
 			return true;
@@ -200,7 +323,8 @@ public static boolean suppressGlobalAlerts;
 			}
 			return true;
 		}
-		else if (cmd.getName().equalsIgnoreCase("toggle-runner-tag"))
+		//UNUSED: use /ct runner-tag [true|false] instead
+		/*else if (cmd.getName().equalsIgnoreCase("toggle-runner-tag"))
 		{
 			if (runnerTag) //if logging, turn it off
 			{
@@ -217,11 +341,11 @@ public static boolean suppressGlobalAlerts;
 				runnerTag = false;
 			}
 			return true;
-		}
+		}*/
 		return false;
 	}
 	
-	public static String listRunners(Player p)
+	public String listRunners(Player p)
 	{
 		String list = "";
 		for (String s: runnerList)
@@ -241,7 +365,7 @@ public static boolean suppressGlobalAlerts;
 		return list;
 	}
 	
-	public static String plainListRunners()
+	public String plainListRunners()
 	{
 		String list = "";
 		for (String s: runnerList)
@@ -254,12 +378,62 @@ public static boolean suppressGlobalAlerts;
 	//Check for metadata on the player first: ClaimTag.<runnerName>
 	public static boolean hasTagged(String runnerName, Player p)
 	{
+		//FILL THIS IN!
 		return true;
 	}
 	
 	public void addPlayerToRunnersList(String s)
 	{
-		runnerList.add(s);
-		getConfig().set("runners", runnerList);
+		//runnerList.add(s);
+		//getConfig().set("runners", runnerList);
+		
+		getConfig().createSection("runners." + s);
+		ItemStack empty = new ItemStack(Material.AIR);
+		getConfig().set("runners." + s, empty);
+		//saveConfig();
+	}
+	
+	public String removePlayerFromRunnersList(int i)
+	{
+		String runnerName = runnerList.remove(i);
+		getConfig().set("runners."+runnerName, null);
+		return runnerName;
+		//saveConfig();
+	}
+	
+	public String removePlayerFromRunnersList(String runnerName)
+	{
+		if (getConfig().isItemStack("runners."+runnerName))
+		{	
+			getConfig().set("runners."+runnerName, null);
+		}
+		return runnerName;
+		//saveConfig();
+	}
+	
+	public void getRunnerList()
+	{
+		AbstractSet<String> runners = (AbstractSet<String>) getConfig().getConfigurationSection("runners").getKeys(false);
+		Iterator<String> it = runners.iterator();
+		List<String> runnerlistproto = new LinkedList<String>();
+		while (it.hasNext())
+		{
+			runnerlistproto.add(it.next());
+		}
+		runnerList = runnerlistproto;
+	}
+	
+	public boolean givePrizeToPlayer(Player p, String runnerName)
+	{
+		int emptyslot = p.getInventory().firstEmpty();
+		if (emptyslot != -1) //ie. there is an empty slot in the player's inventory
+		{
+			p.getInventory().setItem(emptyslot, getConfig().getItemStack("runners."+runnerName));
+			return true;
+		}
+		else //if inventory is full
+		{
+			return false;
+		}
 	}
 }
