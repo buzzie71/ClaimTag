@@ -5,7 +5,7 @@ version: 0.0.5
 commands:
    ct:
       description: Change plugin configurations
-      usage:  /ct [runnerlist|addrunner|debug-mode|runner-tag|suppress-alerts|setprize]
+      usage:  /ct [runnerlist|addrunner|delrunner|debug-mode|runner-tag|suppress-alerts|setprize|getprize|save|reload]
       permission: ct.change
       permission-message: You do not have permission to use this!
    runners:
