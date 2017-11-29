@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -52,6 +53,7 @@ public static boolean suppressGlobalAlerts;
 		this.saveConfig();
 	}
 	
+	//on P, this event is the same one that is cancelled by no-PvP on WG
 	@EventHandler(priority=EventPriority.LOW)
 	public void onTag(EntityDamageByEntityEvent e)
 	{
@@ -76,6 +78,8 @@ public static boolean suppressGlobalAlerts;
 							getLogger().info(p.getName() + " has already tagged " + r.getName() + ".");
 						}
 						p.sendMessage(ChatColor.RED + "You have already tagged " + r.getName() + ".  Seek out another runner!");
+						//EXPERIMENTAL
+						p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
 					}
 					else
 					{
@@ -86,6 +90,9 @@ public static boolean suppressGlobalAlerts;
 								getLogger().info(p.getName() + " is receiving the prize for tagging " + r.getName() + ".");
 							}
 							p.sendMessage(ChatColor.GREEN + "You have received the prize for tagging " + r.getName() + "!");
+							r.sendMessage(ChatColor.AQUA + p.getName() + " has tagged you and received a prize!"); 
+							//EXPERIMENTAL
+							p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
 							
 							//set player as having tagged the runner
 							String taggerUUID = p.getUniqueId().toString();
@@ -98,6 +105,7 @@ public static boolean suppressGlobalAlerts;
 								List<String> taggedAlready = getConfig().getStringList(r.getName());
 								taggedAlready.add(taggerUUID);
 								getConfig().set(r.getName(), taggedAlready);
+								setTaggedAfterCheck(r.getName(),p);
 							}
 							else //if there is no list yet to put the player in
 							{
@@ -108,6 +116,7 @@ public static boolean suppressGlobalAlerts;
 								List<String> taggedAlready = new LinkedList<String>();
 								taggedAlready.add(taggerUUID);
 								getConfig().set(r.getName(), taggedAlready);
+								setTaggedAfterCheck(r.getName(),p);
 							}
 						}
 						else //the player didn't get the prize because their inventory was full
@@ -117,6 +126,8 @@ public static boolean suppressGlobalAlerts;
 								getLogger().info(p.getName() + "'s full inventory prevented them from receiving a prize for tagging " + r.getName() + ".");
 							}
 							p.sendMessage(ChatColor.RED + "Your inventory is full.  Tag " + r.getName() + " again after you make some space.");
+							//EXPERIMENTAL
+							p.playSound(p.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
 						}
 					}
 				}
@@ -134,7 +145,7 @@ public static boolean suppressGlobalAlerts;
 			 *  2: /ct addrunner <playername> - adds player to list of runners
 			 *  2: /ct debug-mode [true|false] - toggles debug information in console
 			 *  2: /ct runner-tag [true|false] - toggles tagging of runners (true = event is on)
-			 *  2: /ct suppress-alerts [true|false] - Mutes server-wide alerts for this plugin (for testing)
+			 *  2: /ct suppress-broadcasts [true|false] - Mutes server-wide alerts for this plugin (for testing)
 			 *  2: /ct setprize <runnername> - Sets tagging prize for a particular runner using what's selected in inventory.  
 			 *  
 			 *  /runners: Shows all runners (and whether player has tagged them) - for players
@@ -195,7 +206,7 @@ public static boolean suppressGlobalAlerts;
 				}
 				else
 				{
-					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|delrunner|debug-mode|runner-tag|suppress-alerts|setprize|getprize|save|reload]");
+					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|delrunner|debug-mode|runner-tag|suppress-broadcasts|setprize|getprize|save|reload]");
 				}
 			}
 			else if (args.length == 2)
@@ -389,7 +400,7 @@ public static boolean suppressGlobalAlerts;
 				}
 				else
 				{
-					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|delrunner|debug-mode|runner-tag|suppress-alerts|setprize|getprize|save|reload]");
+					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|delrunner|debug-mode|runner-tag|suppress-broadcasts|setprize|getprize|save|reload]");
 				}
 			}
 			return true;
@@ -515,6 +526,10 @@ public static boolean suppressGlobalAlerts;
 		{
 			getLogger().info(p.getName() + " will be set with metadata for having tagged " + runnerName + ".");
 		}
+		if (p.hasMetadata("ClaimTag."+runnerName))
+		{
+			p.removeMetadata("ClaimTag."+runnerName, this);
+		}
 		p.setMetadata("ClaimTag."+runnerName, new FixedMetadataValue(this, "true"));
 	}
 	
@@ -523,6 +538,10 @@ public static boolean suppressGlobalAlerts;
 		if (debugMode)
 		{
 			getLogger().info(p.getName() + " will be set with metadata for not tagging " + runnerName + ".");
+		}
+		if (p.hasMetadata("ClaimTag."+runnerName))
+		{
+			p.removeMetadata("ClaimTag."+runnerName, this);
 		}
 		p.setMetadata("ClaimTag."+runnerName, new FixedMetadataValue(this, "false"));
 	}
