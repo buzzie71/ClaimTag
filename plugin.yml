@@ -1,6 +1,6 @@
 name: ClaimTag
 main: com.gmail.buzziespy.ClaimTag.ClaimTag
-version: 0.0.5
+version: 0.0.6
 
 commands:
    ct:
