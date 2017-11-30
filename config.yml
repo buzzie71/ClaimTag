@@ -1,3 +1,5 @@
 runner-tag-on: false
 debug-mode: false
+verbose-debug: true
 suppress-global-alerts: true
+tagging-announcements: false
