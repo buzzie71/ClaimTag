@@ -67,7 +67,7 @@ public static boolean suppressGlobalAlerts;
 				{
 					if (debugMode)
 					{
-						getLogger().info(p.getName() + " has punched " + r.getName());
+						getLogger().info("[CT-1] " + p.getName() + " has punched " + r.getName());
 					}
 					
 					if (hasTagged(r.getName(), p))
@@ -75,7 +75,7 @@ public static boolean suppressGlobalAlerts;
 						//do nothing if player has already tagged the runner
 						if (debugMode)
 						{
-							getLogger().info(p.getName() + " has already tagged " + r.getName() + ".");
+							getLogger().info("[CT-2] " + p.getName() + " has already tagged " + r.getName() + ".");
 						}
 						p.sendMessage(ChatColor.RED + "You have already tagged " + r.getName() + ".  Seek out another runner!");
 						//EXPERIMENTAL
@@ -87,7 +87,7 @@ public static boolean suppressGlobalAlerts;
 						{
 							if (debugMode)
 							{
-								getLogger().info(p.getName() + " is receiving the prize for tagging " + r.getName() + ".");
+								getLogger().info("[CT-2] " + p.getName() + " is receiving the prize for tagging " + r.getName() + ".");
 							}
 							p.sendMessage(ChatColor.GREEN + "You have received the prize for tagging " + r.getName() + "!");
 							r.sendMessage(ChatColor.AQUA + p.getName() + " has tagged you and received a prize!"); 
@@ -100,7 +100,7 @@ public static boolean suppressGlobalAlerts;
 							{
 								if (debugMode)
 								{
-									getLogger().info(p.getName() + " is being added to the list of players for " + r.getName() + ".");
+									getLogger().info("[CT-1] " + p.getName() + " is being added to the list of players for " + r.getName() + ".");
 								}
 								List<String> taggedAlready = getConfig().getStringList(r.getName());
 								taggedAlready.add(taggerUUID);
@@ -111,7 +111,7 @@ public static boolean suppressGlobalAlerts;
 							{
 								if (debugMode)
 								{
-									getLogger().info(p.getName() + " is first in a new list of players for " + r.getName() + ".");
+									getLogger().info("[CT-1] " + p.getName() + " is first in a new list of players for " + r.getName() + ".");
 								}
 								List<String> taggedAlready = new LinkedList<String>();
 								taggedAlready.add(taggerUUID);
@@ -123,7 +123,7 @@ public static boolean suppressGlobalAlerts;
 						{
 							if (debugMode)
 							{
-								getLogger().info(p.getName() + "'s full inventory prevented them from receiving a prize for tagging " + r.getName() + ".");
+								getLogger().info("[CT-1] " + p.getName() + "'s full inventory prevented them from receiving a prize for tagging " + r.getName() + ".");
 							}
 							p.sendMessage(ChatColor.RED + "Your inventory is full.  Tag " + r.getName() + " again after you make some space.");
 							//EXPERIMENTAL
@@ -147,6 +147,7 @@ public static boolean suppressGlobalAlerts;
 			 *  2: /ct runner-tag [true|false] - toggles tagging of runners (true = event is on)
 			 *  2: /ct suppress-broadcasts [true|false] - Mutes server-wide alerts for this plugin (for testing)
 			 *  2: /ct setprize <runnername> - Sets tagging prize for a particular runner using what's selected in inventory.  
+			 *  2: /ct viewtagged <playername> - See who the specified player has tagged or not tagged so far
 			 *  
 			 *  /runners: Shows all runners (and whether player has tagged them) - for players
 			 *  
@@ -202,7 +203,12 @@ public static boolean suppressGlobalAlerts;
 				else if (args[0].equalsIgnoreCase("reload"))
 				{
 					reloadConfig();
+					getRunnerList();
 					sender.sendMessage(ChatColor.GREEN + "ClaimTag config has been reloaded from file!");
+				}
+				else if (args[0].equalsIgnoreCase("viewtagged"))
+				{
+					sender.sendMessage(ChatColor.RED + "/ct viewtagged <playername>");
 				}
 				else
 				{
@@ -352,13 +358,17 @@ public static boolean suppressGlobalAlerts;
 						//DEBUG:
 						if (debugMode)
 						{
-							getLogger().info("Attempting to access runners."+runnerName);
+							getLogger().info("[CT-1] " + "Attempting to access runners."+runnerName);
 						}
 						if (getConfig().isItemStack("runners."+runnerName))
 						{
 							ItemStack i = p.getEquipment().getItemInMainHand();
 							getConfig().set("runners."+runnerName, i);
 							p.sendMessage(ChatColor.GREEN + "Prize for tagging " + runnerName + " has been set.");
+							if (debugMode)
+							{
+								getLogger().info("[CT-2] " + "Runner "+runnerName+" has been assigned the prize of a " + i.getType().toString());
+							}
 						}
 						else
 						{
@@ -398,6 +408,12 @@ public static boolean suppressGlobalAlerts;
 						sender.sendMessage(ChatColor.RED + runnerName + " is not on the runners list!");
 					}
 				}
+				else if (args[0].equalsIgnoreCase("viewtagged"))
+				{
+					
+					//String runnerName = args[1];
+					
+				}
 				else
 				{
 					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|delrunner|debug-mode|runner-tag|suppress-broadcasts|setprize|getprize|save|reload]");
@@ -406,7 +422,7 @@ public static boolean suppressGlobalAlerts;
 			return true;
 		}
 		
-		if (cmd.getName().equalsIgnoreCase("runners")) //public command
+		else if (cmd.getName().equalsIgnoreCase("runners")) //public command
 		{
 			if (sender instanceof Player)
 			{
@@ -524,7 +540,7 @@ public static boolean suppressGlobalAlerts;
 	{
 		if (debugMode)
 		{
-			getLogger().info(p.getName() + " will be set with metadata for having tagged " + runnerName + ".");
+			getLogger().info("[CT-1] " + p.getName() + " will be set with metadata for having tagged " + runnerName + ".");
 		}
 		if (p.hasMetadata("ClaimTag."+runnerName))
 		{
@@ -537,7 +553,7 @@ public static boolean suppressGlobalAlerts;
 	{
 		if (debugMode)
 		{
-			getLogger().info(p.getName() + " will be set with metadata for not tagging " + runnerName + ".");
+			getLogger().info("[CT-1] " + p.getName() + " will be set with metadata for not tagging " + runnerName + ".");
 		}
 		if (p.hasMetadata("ClaimTag."+runnerName))
 		{
@@ -550,14 +566,14 @@ public static boolean suppressGlobalAlerts;
 	{
 		if (debugMode)
 		{
-			getLogger().info(s + " is being added to runnerList.");
+			getLogger().info("[CT-1] " + s + " is being added to runnerList.");
 		}
 		runnerList.add(s);
 		//getConfig().set("runners", runnerList);
 		
 		if (debugMode)
 		{
-			getLogger().info(s + " is being added to the config's runners list with default prize of coal.");
+			getLogger().info("[CT-1] " + s + " is being added to the config's runners list with default prize of coal.");
 		}
 		getConfig().createSection("runners." + s);
 		ItemStack empty = new ItemStack(Material.COAL);
@@ -578,16 +594,15 @@ public static boolean suppressGlobalAlerts;
 	{
 		if (getConfig().isItemStack("runners."+runnerName))
 		{	
-			//DEBUG:
 			if (debugMode)
 			{
-				getLogger().info(runnerName + " is being removed from the config runners list.");
+				getLogger().info("[CT-1] " + runnerName + " is being removed from the config runners list.");
 			}
 			getConfig().set("runners."+runnerName, null);
 			
 			if (debugMode)
 			{
-				getLogger().info(runnerName + " is being removed from runnerList.");
+				getLogger().info("[CT-1] " + runnerName + " is being removed from runnerList.");
 			}
 			for (String s: runnerList)
 			{
@@ -596,6 +611,12 @@ public static boolean suppressGlobalAlerts;
 					runnerList.remove(s);
 				}
 			}
+			//remove the runner's associated list of UUIDs if it exists
+			if (getConfig().isList(runnerName))
+			{
+				getConfig().set(runnerName, null);
+			}
+			
 			return true;
 		}
 		return false;
