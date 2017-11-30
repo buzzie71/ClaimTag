@@ -1,11 +1,11 @@
 name: ClaimTag
 main: com.gmail.buzziespy.ClaimTag.ClaimTag
-version: 0.0.6
+version: 0.0.7
 
 commands:
    ct:
       description: Change plugin configurations
-      usage:  /ct [runnerlist|addrunner|delrunner|debug-mode|runner-tag|suppress-alerts|setprize|getprize|save|reload]
+      usage:  /ct [runnerlist|addrunner|delrunner|debug-mode|verbose-debug|runner-tag|suppress-alerts|tagging-announcements|setprize|getprize|save|reload|viewtagged]
       permission: ct.change
       permission-message: You do not have permission to use this!
    runners:
