@@ -4,8 +4,11 @@ import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -24,7 +27,9 @@ public final class ClaimTag extends JavaPlugin implements Listener{
 public static boolean runnerTag;
 public static List<String> runnerList;
 public static boolean debugMode;
+public static boolean verboseDebug;
 public static boolean suppressGlobalAlerts;
+public static boolean taggingBroadcasts;
 
 	
 	@Override
@@ -41,19 +46,29 @@ public static boolean suppressGlobalAlerts;
 		//runnerList = getConfig().getStringList("runners");
 		getLogger().info("Loading debug status...");
 		debugMode = getConfig().getBoolean("debug-mode");
+		getLogger().info("Loading debug verbosity...");
+		verboseDebug = getConfig().getBoolean("verbose-debug");
 		getLogger().info("Loading global alerts...");
 		suppressGlobalAlerts = getConfig().getBoolean("suppress-global-alerts");
+		getLogger().info("Loading tagging announcements status...");
+		taggingBroadcasts = getConfig().getBoolean("tagging-announcements");
 	}
 	
 	@Override
 	public void onDisable()
 	{
+		//transfer config booleans to config file
+		getConfig().set("runner-tag", runnerTag);
+		getConfig().set("debug-mode", debugMode);
+		getConfig().set("verbose-debug", verboseDebug);
+		getConfig().set("suppress-broadcasts", suppressGlobalAlerts);
+		getConfig().set("tagging-announcements", taggingBroadcasts);
 		//save the config file
 		getLogger().info("Saving config!");
 		this.saveConfig();
 	}
 	
-	//on P, this event is the same one that is cancelled by no-PvP on WG
+	//on P, this event is(?) the same one that is cancelled by no-PvP on WG
 	@EventHandler(priority=EventPriority.LOW)
 	public void onTag(EntityDamageByEntityEvent e)
 	{
@@ -65,7 +80,7 @@ public static boolean suppressGlobalAlerts;
 				Player p = (Player)e.getDamager();
 				if (getConfig().isItemStack("runners."+r.getName()))
 				{
-					if (debugMode)
+					if (debugMode && verboseDebug)
 					{
 						getLogger().info("[CT-1] " + p.getName() + " has punched " + r.getName());
 					}
@@ -89,7 +104,14 @@ public static boolean suppressGlobalAlerts;
 							{
 								getLogger().info("[CT-2] " + p.getName() + " is receiving the prize for tagging " + r.getName() + ".");
 							}
-							p.sendMessage(ChatColor.GREEN + "You have received the prize for tagging " + r.getName() + "!");
+							if (taggingBroadcasts) //personal alert as alternate method to avoid cluttering chat feed when tagging broadcasts are on
+							{
+								getServer().broadcastMessage(ChatColor.GREEN + "[CT] " + p.getName() + " has tagged " + r.getName() + "!");
+							}
+							else
+							{
+								p.sendMessage(ChatColor.GREEN + "You have received the prize for tagging " + r.getName() + "!");
+							}
 							r.sendMessage(ChatColor.AQUA + p.getName() + " has tagged you and received a prize!"); 
 							//EXPERIMENTAL
 							p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
@@ -123,7 +145,7 @@ public static boolean suppressGlobalAlerts;
 						{
 							if (debugMode)
 							{
-								getLogger().info("[CT-1] " + p.getName() + "'s full inventory prevented them from receiving a prize for tagging " + r.getName() + ".");
+								getLogger().info("[CT-2] " + p.getName() + "'s full inventory prevented them from receiving a prize for tagging " + r.getName() + ".");
 							}
 							p.sendMessage(ChatColor.RED + "Your inventory is full.  Tag " + r.getName() + " again after you make some space.");
 							//EXPERIMENTAL
@@ -154,11 +176,13 @@ public static boolean suppressGlobalAlerts;
 			 */
 			if (args.length == 0)
 			{
-				sender.sendMessage(ChatColor.AQUA + "https://github.com/buzzie71/MaskOfFutures/blob/master/README.md");
+				sender.sendMessage(ChatColor.AQUA + "https://github.com/buzzie71/ClaimTag/blob/master/README.md");
 				sender.sendMessage(ChatColor.AQUA + "=====ClaimTag, v"+ getDescription().getVersion() +"=====");
 				sender.sendMessage(ChatColor.AQUA + "Runner tag: " + runnerTag);
 				sender.sendMessage(ChatColor.AQUA + "Debug mode: " + debugMode);
+				sender.sendMessage(ChatColor.AQUA + "Verbose debug: " + verboseDebug);
 				sender.sendMessage(ChatColor.AQUA + "Suppress broadcasts: " + suppressGlobalAlerts);
+				sender.sendMessage(ChatColor.AQUA + "Tagging announcements: " + taggingBroadcasts);
 				sender.sendMessage(ChatColor.RED + "WARNING: Toggling runner-tag with suppress-broadcasts set to false will alert the server!");
 				sender.sendMessage(ChatColor.RED + "WARNING: Adding or removing runners with suppress-broadcasts false and runner-tag true will alert the server!");
 			}
@@ -181,6 +205,11 @@ public static boolean suppressGlobalAlerts;
 					sender.sendMessage(ChatColor.AQUA + "Debug mode: " + debugMode);
 					sender.sendMessage(ChatColor.RED + "/ct debug-mode <true|false>");
 				}
+				else if (args[0].equalsIgnoreCase("verbose-debug"))
+				{
+					sender.sendMessage(ChatColor.AQUA + "Verbose debug: " + verboseDebug);
+					sender.sendMessage(ChatColor.RED + "/ct verbose-debug <true|false>");
+				}
 				else if (args[0].equalsIgnoreCase("runner-tag"))
 				{
 					sender.sendMessage(ChatColor.AQUA + "Runner tag: " + runnerTag);
@@ -191,12 +220,24 @@ public static boolean suppressGlobalAlerts;
 					sender.sendMessage(ChatColor.AQUA + "Suppress broadcasts: " + suppressGlobalAlerts);
 					sender.sendMessage(ChatColor.RED + "/ct suppress-broadcasts <true|false>");
 				}
+				else if (args[0].equalsIgnoreCase("tagging-announcements"))
+				{
+					sender.sendMessage(ChatColor.AQUA + "Tagging announcements: " + taggingBroadcasts);
+					sender.sendMessage(ChatColor.RED + "/ct tagging-announcements <true|false>");
+				}
 				else if (args[0].equalsIgnoreCase("setprize"))
 				{
 					sender.sendMessage(ChatColor.RED + "/ct setprize <playername>");
 				}
 				else if (args[0].equalsIgnoreCase("save"))
 				{
+					//runners and players data are all manipulated where tagging is handled
+					//just need to save the config settings
+					getConfig().set("runner-tag", runnerTag);
+					getConfig().set("debug-mode", debugMode);
+					getConfig().set("verbose-debug", verboseDebug);
+					getConfig().set("suppress-broadcasts", suppressGlobalAlerts);
+					getConfig().set("tagging-announcements", taggingBroadcasts);
 					saveConfig();
 					sender.sendMessage(ChatColor.GREEN + "ClaimTag Config changes saved to file!");
 				}
@@ -204,6 +245,11 @@ public static boolean suppressGlobalAlerts;
 				{
 					reloadConfig();
 					getRunnerList();
+					runnerTag = getConfig().getBoolean("runner-tag-on");
+					debugMode = getConfig().getBoolean("debug-mode");
+					verboseDebug = getConfig().getBoolean("verbose-debug");
+					suppressGlobalAlerts = getConfig().getBoolean("suppress-global-alerts");
+					taggingBroadcasts = getConfig().getBoolean("tagging-announcements");
 					sender.sendMessage(ChatColor.GREEN + "ClaimTag config has been reloaded from file!");
 				}
 				else if (args[0].equalsIgnoreCase("viewtagged"))
@@ -212,7 +258,7 @@ public static boolean suppressGlobalAlerts;
 				}
 				else
 				{
-					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|delrunner|debug-mode|runner-tag|suppress-broadcasts|setprize|getprize|save|reload]");
+					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|delrunner|debug-mode|verbose-debug|runner-tag|suppress-broadcasts|tagging-announcements|setprize|getprize|save|reload|viewtagged]");
 				}
 			}
 			else if (args.length == 2)
@@ -271,12 +317,43 @@ public static boolean suppressGlobalAlerts;
 						else
 						{
 							debugMode = false;
-							sender.sendMessage(ChatColor.GREEN + "Debug mode set to true. Debug messages will appear in console.");
+							sender.sendMessage(ChatColor.RED + "Debug mode set to false. Debug messages will not appear in console.");
 						}
 					}
 					else
 					{
 						sender.sendMessage(ChatColor.RED + "/ct debug-mode <true|false>");
+					}
+				}
+				else if (args[0].equalsIgnoreCase("verbose-debug"))
+				{
+					if (args[1].equalsIgnoreCase("true"))
+					{
+						if (verboseDebug)
+						{
+							sender.sendMessage(ChatColor.RED + "Verbose debug is already set to true.");
+						}
+						else
+						{
+							verboseDebug = true;
+							sender.sendMessage(ChatColor.GREEN + "Verbose debug set to true. Debug messages will be more numerous.");
+						}
+					}
+					else if (args[1].equalsIgnoreCase("false"))
+					{
+						if (!debugMode)
+						{
+							sender.sendMessage(ChatColor.RED + "Debug mode is already set to false.");
+						}
+						else
+						{
+							debugMode = false;
+							sender.sendMessage(ChatColor.RED + "Verbose debug set to false. Debug messages will be reduced.");
+						}
+					}
+					else
+					{
+						sender.sendMessage(ChatColor.RED + "/ct verbose-debug <true|false>");
 					}
 				}
 				else if (args[0].equalsIgnoreCase("runner-tag"))
@@ -341,12 +418,43 @@ public static boolean suppressGlobalAlerts;
 						else
 						{
 							suppressGlobalAlerts = false;
-							sender.sendMessage(ChatColor.GREEN + "Suppress broadcasts set to false. Server-wide broadcasts from this plugin will display to all online players.");
+							sender.sendMessage(ChatColor.RED + "Suppress broadcasts set to false. Server-wide broadcasts from this plugin will display to all online players.");
 						}
 					}
 					else
 					{
 						sender.sendMessage(ChatColor.RED + "/ct suppress-broadcasts <true|false>");
+					}
+				}
+				else if (args[0].equalsIgnoreCase("tagging-announcements"))
+				{
+					if (args[1].equalsIgnoreCase("true"))
+					{
+						if (taggingBroadcasts)
+						{
+							sender.sendMessage(ChatColor.RED + "Tagging announcements is already set to true.");
+						}
+						else
+						{
+							taggingBroadcasts = true;
+							sender.sendMessage(ChatColor.GREEN + "Tagging announcements set to true. The plugin will announce player tagging of runners to the server.");
+						}
+					}
+					else if (args[1].equalsIgnoreCase("false"))
+					{
+						if (!taggingBroadcasts)
+						{
+							sender.sendMessage(ChatColor.RED + "Tagging announcements is already set to false.");
+						}
+						else
+						{
+							taggingBroadcasts = false;
+							sender.sendMessage(ChatColor.RED + "Tagging announcements set to false. The plugin will not announce player tagging of runners to the server.");
+						}
+					}
+					else
+					{
+						sender.sendMessage(ChatColor.RED + "/ct tagging-announcements <true|false>");
 					}
 				}
 				else if (args[0].equalsIgnoreCase("setprize"))
@@ -356,7 +464,7 @@ public static boolean suppressGlobalAlerts;
 						Player p = (Player)sender;
 						String runnerName = args[1];
 						//DEBUG:
-						if (debugMode)
+						if (debugMode && verboseDebug)
 						{
 							getLogger().info("[CT-1] " + "Attempting to access runners."+runnerName);
 						}
@@ -367,7 +475,7 @@ public static boolean suppressGlobalAlerts;
 							p.sendMessage(ChatColor.GREEN + "Prize for tagging " + runnerName + " has been set.");
 							if (debugMode)
 							{
-								getLogger().info("[CT-2] " + "Runner "+runnerName+" has been assigned the prize of a " + i.getType().toString());
+								getLogger().info("[CT-2] " + "Runner "+runnerName+" has been assigned the prize of " + i.getType().toString());
 							}
 						}
 						else
@@ -410,13 +518,53 @@ public static boolean suppressGlobalAlerts;
 				}
 				else if (args[0].equalsIgnoreCase("viewtagged"))
 				{
+					String playerName = args[1];
+					Player p = getServer().getPlayer(playerName);
+					if (p != null) //if the player is online
+					{
+						sender.sendMessage(ChatColor.AQUA + "Player " + playerName + " has seen these runners:" + listRunners(p));
+					}
+					else //if player is not online
+					{
+						//deprecated getOfflinePlayer(String name) - may need to replace?
+						OfflinePlayer offline = getServer().getOfflinePlayer(playerName); 
+						if (offline.hasPlayedBefore())
+						{
+							String offlinePlayerUUID = offline.getUniqueId().toString();
+							
+							//assemble the list for the offline player
+							String playerRunnerList = "";
+							for (String runner: runnerList)
+							{
+								for (String UID: getConfig().getStringList(runner))
+								{
+									if (UID.equals(offlinePlayerUUID)) //if UUID found in list, add it and search the next list
+									{
+										playerRunnerList = playerRunnerList + "\n" + ChatColor.GREEN + runner + ChatColor.RESET;
+										break;
+									}
+								}
+								playerRunnerList = playerRunnerList + "\n" + ChatColor.RED + runner + ChatColor.RESET;
+							}
+							sender.sendMessage(ChatColor.AQUA + "Player " + playerName + " has seen these runners:" + playerRunnerList);
+							if (debugMode)
+							{
+								getLogger().info("[CT-2] Player " + playerName + " has seen these runners:" + playerRunnerList);
+							}
+						}
+						else //if player specified has not been seen before
+						{
+							sender.sendMessage(ChatColor.RED + offline.getName() + " has never played on the server before!");
+						}
+						
+					}
 					
-					//String runnerName = args[1];
+					
 					
 				}
 				else
 				{
-					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|delrunner|debug-mode|runner-tag|suppress-broadcasts|setprize|getprize|save|reload]");
+					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|delrunner|debug-mode|verbose-debug|runner-tag|suppress-broadcasts|tagging-announcements|setprize|getprize|save|reload|viewtagged]");
 				}
 			}
 			return true;
@@ -502,6 +650,7 @@ public static boolean suppressGlobalAlerts;
 	}
 	
 	//Check for metadata on the player first: ClaimTag.<runnerName>
+	//This is only valid for players who are currently online
 	public boolean hasTagged(String runnerName, Player p)
 	{
 		//Check for metadata first
@@ -517,7 +666,10 @@ public static boolean suppressGlobalAlerts;
 			}
 			else //this should never happen, but put out a warning just in case...
 			{
-				getLogger().info("WARNING: ClaimTag."+runnerName+" metadata for player " + p.getName()+ " is not true or false! Attempting config check.");
+				if (debugMode && verboseDebug)
+				{
+					getLogger().info("[CT-1]: WARNING: ClaimTag."+runnerName+" metadata for player " + p.getName()+ " is not true or false! Attempting config check.");
+				}
 			}
 		}
 		
@@ -538,7 +690,7 @@ public static boolean suppressGlobalAlerts;
 	
 	public void setTaggedAfterCheck(String runnerName, Player p)
 	{
-		if (debugMode)
+		if (debugMode && verboseDebug)
 		{
 			getLogger().info("[CT-1] " + p.getName() + " will be set with metadata for having tagged " + runnerName + ".");
 		}
@@ -551,7 +703,7 @@ public static boolean suppressGlobalAlerts;
 	
 	public void setNotTaggedAfterCheck(String runnerName, Player p)
 	{
-		if (debugMode)
+		if (debugMode && verboseDebug)
 		{
 			getLogger().info("[CT-1] " + p.getName() + " will be set with metadata for not tagging " + runnerName + ".");
 		}
@@ -564,14 +716,14 @@ public static boolean suppressGlobalAlerts;
 	
 	public void addPlayerToRunnersList(String s)
 	{
-		if (debugMode)
+		if (debugMode && verboseDebug)
 		{
 			getLogger().info("[CT-1] " + s + " is being added to runnerList.");
 		}
 		runnerList.add(s);
 		//getConfig().set("runners", runnerList);
 		
-		if (debugMode)
+		if (debugMode && verboseDebug)
 		{
 			getLogger().info("[CT-1] " + s + " is being added to the config's runners list with default prize of coal.");
 		}
@@ -594,13 +746,13 @@ public static boolean suppressGlobalAlerts;
 	{
 		if (getConfig().isItemStack("runners."+runnerName))
 		{	
-			if (debugMode)
+			if (debugMode && verboseDebug)
 			{
 				getLogger().info("[CT-1] " + runnerName + " is being removed from the config runners list.");
 			}
 			getConfig().set("runners."+runnerName, null);
 			
-			if (debugMode)
+			if (debugMode && verboseDebug)
 			{
 				getLogger().info("[CT-1] " + runnerName + " is being removed from runnerList.");
 			}
