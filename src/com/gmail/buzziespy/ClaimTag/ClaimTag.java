@@ -170,7 +170,7 @@ public static boolean taggingBroadcasts;
 			 *  2: /ct suppress-broadcasts [true|false] - Mutes server-wide alerts for this plugin (for testing)
 			 *  2: /ct setprize <runnername> - Sets tagging prize for a particular runner using what's selected in inventory.  
 			 *  2: /ct viewtagged <playername> - See who the specified player has tagged or not tagged so far
-			 *  
+			 *  2: /ct clearmeta <playername>
 			 *  /runners: Shows all runners (and whether player has tagged them) - for players
 			 *  
 			 */
@@ -558,15 +558,39 @@ public static boolean taggingBroadcasts;
 						}
 						
 					}
-					
-					
-					
 				}
+				else if (args[0].equalsIgnoreCase("clearmeta"))
+				{ //clear a player's metadata in case of desync due to a runner they tagged being removed and added again
+					String playerName = args[1];
+					Player p = getServer().getPlayer(playerName);
+					if (p != null) //if player is online
+					{
+						int metcount = 0;
+						for (String s: runnerList)
+						{
+							if (p.hasMetadata("ClaimTag."+s))
+							{
+								if (debugMode && verboseDebug)
+								{
+									getLogger().info("[CT-1] Removed metadata ClaimTag." + s + " from player " + p.getName());
+								}
+								metcount += 1;
+								p.removeMetadata("ClaimTag."+s, this);
+							}
+						}
+						if (debugMode)
+						{
+							getLogger().info("[CT-2] Cleared " + metcount + " metadata on player " + p.getName());
+						}
+					}
+				}
+				
 				else
 				{
 					sender.sendMessage(ChatColor.RED + "/ct [runnerlist|addrunner|delrunner|debug-mode|verbose-debug|runner-tag|suppress-broadcasts|tagging-announcements|setprize|getprize|save|reload|viewtagged]");
 				}
 			}
+			
 			return true;
 		}
 		
