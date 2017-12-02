@@ -40,7 +40,7 @@ public static boolean taggingBroadcasts;
 		//load up the config file
 		getConfig();
 		getLogger().info("Loading runner tagging status...");
-		runnerTag = getConfig().getBoolean("runner-tag-on");
+		runnerTag = getConfig().getBoolean("runner-tag");
 		getLogger().info("Loading runner list...");
 		getRunnerList();
 		//runnerList = getConfig().getStringList("runners");
@@ -245,7 +245,7 @@ public static boolean taggingBroadcasts;
 				{
 					reloadConfig();
 					getRunnerList();
-					runnerTag = getConfig().getBoolean("runner-tag-on");
+					runnerTag = getConfig().getBoolean("runner-tag");
 					debugMode = getConfig().getBoolean("debug-mode");
 					verboseDebug = getConfig().getBoolean("verbose-debug");
 					suppressGlobalAlerts = getConfig().getBoolean("suppress-global-alerts");
@@ -473,9 +473,10 @@ public static boolean taggingBroadcasts;
 							ItemStack i = p.getEquipment().getItemInMainHand();
 							getConfig().set("runners."+runnerName, i);
 							p.sendMessage(ChatColor.GREEN + "Prize for tagging " + runnerName + " has been set.");
+							String itemName = i.getItemMeta().getDisplayName();
 							if (debugMode)
 							{
-								getLogger().info("[CT-2] " + "Runner "+runnerName+" has been assigned the prize of " + i.getType().toString());
+								getLogger().info("[CT-2] " + "Runner "+runnerName+" has been assigned the prize of " + i.getType().toString() + " named " + itemName + ".");
 							}
 						}
 						else
@@ -523,6 +524,10 @@ public static boolean taggingBroadcasts;
 					if (p != null) //if the player is online
 					{
 						sender.sendMessage(ChatColor.AQUA + "Player " + playerName + " has seen these runners:" + listRunners(p));
+						if (debugMode)
+						{
+							getLogger().info("[CT-2] Player " + playerName + " has seen these runners:" + listRunners(p));
+						}
 					}
 					else //if player is not online
 					{
@@ -566,6 +571,7 @@ public static boolean taggingBroadcasts;
 					if (p != null) //if player is online
 					{
 						int metcount = 0;
+						String names = "";
 						for (String s: runnerList)
 						{
 							if (p.hasMetadata("ClaimTag."+s))
@@ -575,13 +581,19 @@ public static boolean taggingBroadcasts;
 									getLogger().info("[CT-1] Removed metadata ClaimTag." + s + " from player " + p.getName());
 								}
 								metcount += 1;
+								names = names + s + " ";
 								p.removeMetadata("ClaimTag."+s, this);
 							}
 						}
 						if (debugMode)
 						{
-							getLogger().info("[CT-2] Cleared " + metcount + " metadata on player " + p.getName());
+							getLogger().info("[CT-2] Cleared " + metcount + " metadata on player " + p.getName() + ": " + names);
 						}
+						sender.sendMessage(ChatColor.GREEN + "Cleared " + metcount + " metadata on player " + p.getName() + ": " + names);
+					}
+					else
+					{
+						sender.sendMessage(ChatColor.RED + "Player " + playerName + " is not online!");
 					}
 				}
 				
@@ -773,18 +785,16 @@ public static boolean taggingBroadcasts;
 			if (debugMode && verboseDebug)
 			{
 				getLogger().info("[CT-1] " + runnerName + " is being removed from the config runners list.");
+				getLogger().info("[CT-1] " + runnerName + " is being removed from runnerList.");
 			}
 			getConfig().set("runners."+runnerName, null);
 			
-			if (debugMode && verboseDebug)
-			{
-				getLogger().info("[CT-1] " + runnerName + " is being removed from runnerList.");
-			}
 			for (String s: runnerList)
 			{
 				if (s.equals(runnerName))
 				{
 					runnerList.remove(s);
+					break;
 				}
 			}
 			//remove the runner's associated list of UUIDs if it exists
