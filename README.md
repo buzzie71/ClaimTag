@@ -48,7 +48,8 @@ Changelog
 ===
 
 Known issues and feature requests:
-* Prize item is not dispensed when the original item stack used for `/setprize` is combined with another or split up.
+* Prize item is not dispensed when the original item stack used to set the prize on the command runner is combined with another or split up.  (This can be mitigated by having the prize be set by someone else.)
+* A player's tagging status will sometimes desync with the config, eg. when a runner is removed and then re-added after tagging.  (`/ct clearmeta <player>` will clear metadata on a player so tagging status can be drawn straight from the config, but it is not the most elegant fix.  Care during setup will mitigate this.)
 
 0.0.7:
 * Fixed configuration booleans not actually being saved to file on server shutdown or `/ct save`.
